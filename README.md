@@ -1,1 +1,2 @@
-# hw3scheduling
+Carlos Medina, Gabriel Omar Curet-Irizarry
+cemedina, gocuretirizarry
