@@ -109,11 +109,10 @@ void analyze_FIFO(struct job *head) {
 
 int compare_Jobs(const void *left, const void *right) {
     //https://stackoverflow.com/questions/35914574/sorting-linked-list-simplest-way
-    struct job *leftj = *(struct job**)left;
-    struct job *rightj = *(struct job**)right;
-    int leftWeight= leftj->arrival + leftj->duration;
-    int rightWeight= rightj->arrival + rightj->duration;
-    printf("Left %d  Right %d\n",leftWeight,rightWeight);
+    struct job *leftj = *(struct job **) left;
+    struct job *rightj = *(struct job **) right;
+    int leftWeight = leftj->arrival + leftj->duration;
+    int rightWeight = rightj->arrival + rightj->duration;
     return leftWeight - rightWeight;
 }
 
@@ -133,9 +132,15 @@ void policy_SJF(struct job *head) {
 
     qsort(jobArray, jobArraySize, sizeof(struct job *), compare_Jobs);
 
+    int cumTime = 0;
+    int jobTime = 0;
     for (int i = 0; i < jobArraySize; i++) {
-        printf("[Job %d] arrived at [%d], ran for: [%d]\n", jobArray[i]->id, jobArray[i]->arrival,
-               jobArray[i]->duration);
+        curJob = jobArray[i];
+        jobTime = cumTime-curJob->arrival;
+        cumTime += cumTime - jobTime;
+        printf("t=%d: jt=%d: [Job %d] arrived at [%d], ran for: [%d]\n", cumTime, jobTime, curJob->id, curJob->arrival,
+               curJob->duration);
+        cumTime += curJob->duration;
     }
     puts("End of execution with SJF.");
 }
