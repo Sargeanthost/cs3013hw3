@@ -126,19 +126,19 @@ void policy_SJF(struct job *head) {
     }
     struct job *jobArray[jobArraySize];
     for (curJob = head; curJob != NULL; curJob = curJob->next) {
-        //ids are in order and 0 indexed
         jobArray[curJob->id] = curJob;
     }
 
     qsort(jobArray, jobArraySize, sizeof(struct job *), compare_Jobs);
 
     int cumTime = 0;
-    int jobTime = 0;
     for (int i = 0; i < jobArraySize; i++) {
         curJob = jobArray[i];
-        jobTime = cumTime-curJob->arrival;
-        cumTime += cumTime - jobTime;
-        printf("t=%d: jt=%d: [Job %d] arrived at [%d], ran for: [%d]\n", cumTime, jobTime, curJob->id, curJob->arrival,
+
+        if (curJob->arrival > cumTime) {
+            cumTime += curJob->arrival - cumTime;
+        }
+        printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]\n", cumTime, curJob->id, curJob->arrival,
                curJob->duration);
         cumTime += curJob->duration;
     }
