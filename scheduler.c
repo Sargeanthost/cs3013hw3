@@ -49,7 +49,6 @@ void append(int id, int arrival, int duration) {
 
     //Add job to end of list
     prev->next = tmp;
-    return;
 }
 
 
@@ -109,19 +108,18 @@ void analyze_FIFO(struct job *head) {
 }
 
 int compare_Jobs(const void *left, const void *right) {
-    if (((struct job *) left)->duration + ((struct job *) left)->arrival <
-        ((struct job *) right)->duration + ((struct job *) right)->arrival)
-        return -1;
-    else
-        return 1;
+    //https://stackoverflow.com/questions/35914574/sorting-linked-list-simplest-way
+    struct job *leftj = *(struct job**)left;
+    struct job *rightj = *(struct job**)right;
+    int leftWeight= leftj->arrival + leftj->duration;
+    int rightWeight= rightj->arrival + rightj->duration;
+    printf("Left %d  Right %d\n",leftWeight,rightWeight);
+    return leftWeight - rightWeight;
 }
 
 void policy_SJF(struct job *head) {
     puts("Execution trace with SJF:");
-//    struct job *curJob = head;
     struct job *curJob;
-    //sort the job list prior to while looping:
-    // to sort, add arrival and duration.
 
     int jobArraySize = 0;
     for (curJob = head; curJob != NULL; curJob = curJob->next) {
@@ -132,15 +130,10 @@ void policy_SJF(struct job *head) {
         //ids are in order and 0 indexed
         jobArray[curJob->id] = curJob;
     }
-//
-    qsort(jobArray,jobArraySize,sizeof(struct job*),compare_Jobs);
 
-//    while (curJob != NULL) {
-//        printf("[Job %d] arrived at [%d], ran for: [%d]\n", curJob->id, curJob->arrival,
-//               curJob->duration);
-//        curJob = curJob->next;
-//    }
-    for(int i = 0; i < jobArraySize; i++){
+    qsort(jobArray, jobArraySize, sizeof(struct job *), compare_Jobs);
+
+    for (int i = 0; i < jobArraySize; i++) {
         printf("[Job %d] arrived at [%d], ran for: [%d]\n", jobArray[i]->id, jobArray[i]->arrival,
                jobArray[i]->duration);
     }
