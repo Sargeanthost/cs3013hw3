@@ -106,9 +106,7 @@ void analyze_FIFO(struct job *head) {
     struct job *curJob = head;
 
     int id = 1;
-    int response = 0;
-    int turnaround = 0;
-    int wait = 0;
+    int response = 0, turnaround = 0, wait = 0;
 
     while (curJob != NULL) {
         printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n", curJob->id, cumTime - curJob->arrival,
@@ -167,6 +165,51 @@ void policy_SJF(struct job *head) {
 
 void analyze_SJF(struct job *pJob) {
 
+    struct job *curJob;
+
+    int jobArraySize = 0;
+    for (curJob = head; curJob != NULL; curJob = curJob->next) {
+        ++jobArraySize;
+    }
+    struct job *jobArray[jobArraySize];
+    for (curJob = head; curJob != NULL; curJob = curJob->next) {
+        jobArray[curJob->id] = curJob;
+    }
+
+    qsort(jobArray, jobArraySize, sizeof(struct job *), compare_Jobs);
+
+    int cumTime = 0;
+
+    int id = 1;
+    int response[jobArraySize];
+    int turnaround[jobArraySize];
+    int wait[jobArraySize];
+
+    for (int i = 0; i < jobArraySize; i++) {
+        curJob = jobArray[i];
+        if (curJob->arrival > cumTime) {
+            cumTime += curJob->arrival - cumTime;
+        }
+        if (curJob->id + 1 > id) {
+            id = curJob->id + 1;
+        }
+        response[curJob->id] = cumTime - curJob->arrival;
+        turnaround[curJob->id] = (cumTime + curJob->duration) - curJob->arrival;
+        wait[curJob->id] = cumTime - curJob->arrival;
+
+        cumTime += curJob->duration;
+    }
+
+    //print stats in order
+    int responseS = 0, turnaroundS = 0, waitS = 0;
+    for (int i = 0; i < jobArraySize; i++) {
+        printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n", i, response[i], turnaround[i], wait[i]);
+        responseS += response[i];
+        turnaroundS += turnaround[i];
+        waitS += wait[i];
+    }
+    printf("Average -- Response: %.2f  Turnaround %.2f  Wait %.2f\n", responseS / (float) id, turnaroundS / (float) id,
+           waitS / (float) id);
 }
 
 int main(int argc, char **argv) {
