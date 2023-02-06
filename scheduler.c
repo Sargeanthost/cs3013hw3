@@ -102,8 +102,28 @@ void policy_FIFO(struct job *head) {
 }
 
 void analyze_FIFO(struct job *head) {
-    // TODO: Fill this in
+    int cumTime = 0;
+    struct job *curJob = head;
 
+    int id = 1;
+    int response = 0;
+    int turnaround = 0;
+    int wait = 0;
+
+    while (curJob != NULL) {
+        printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n", curJob->id, cumTime - curJob->arrival,
+               (cumTime + curJob->duration) - curJob->arrival, cumTime - curJob->arrival);
+
+        id = curJob->id + 1;
+        response += cumTime - curJob->arrival;
+        turnaround += (cumTime + curJob->duration) - curJob->arrival;
+        wait += cumTime - curJob->arrival;
+
+        cumTime += curJob->duration;
+        curJob = curJob->next;
+    }
+    printf("Average -- Response: %.2f  Turnaround %.2f  Wait %.2f\n", response / (float) id, turnaround / (float) id,
+           wait / (float) id);
     return;
 }
 
