@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <assert.h>
 #include <string.h>
-#include <limits.h>
 
 // TODO: Add more fields to this struct
 struct job {
@@ -81,8 +79,6 @@ void read_workload_file(char *filename) {
 
     // Make sure we read in at least one job
     assert(id > 0);
-
-    return;
 }
 
 
@@ -122,7 +118,6 @@ void analyze_FIFO(struct job *head) {
     }
     printf("Average -- Response: %.2f  Turnaround %.2f  Wait %.2f\n", response / (float) id, turnaround / (float) id,
            wait / (float) id);
-    return;
 }
 
 int compare_Jobs(const void *left, const void *right) {
@@ -219,81 +214,58 @@ void policy_RR(struct job *pJob, int quanta) {
     struct job *queue[100] = {NULL};
     struct job *jobs[100] = {NULL};
     int cumTime = 0;
-    int numJobs = 0;
     int runQueueIndex = 0;
     int insertQueueIndex = 0;
     int nextJobIndex = 0;
 
-
-    //check arrival time. if larger than current time, run next job from queue. increment time, and check job again. repeat
-
     while (curJob != NULL) {
         jobs[curJob->id] = curJob;
-        numJobs = curJob->id + 1;
         curJob = curJob->next;
     }
-    //while jobs[nextJobIndex] != null || queue[queueIndex] != null //if there exists a job
-//     if jobs[nextJobIndex]->arrival <= cumTime { //if there is a valid job non queued job
-//           currentJob = jobs[nextJobIndex]
-//           if (currentJob->duration >= quanta){
-//               runtime = quanta
-//           } else {
-//               runtime = nextJob->duration;
-//           }
-//           cumtime += runtime
-//           currentJob->duration = currentJob->duration-runtime
 
-//           if currentJob->duration > quanta {
-//              queue[insertQueueIndex++] = currentJob;
-//           }
-//           nextJobIndex++
-//     } else if queue[queueIndex] != null {//theres a job thats in the future, so run what we have instead. must check jobs before queue
-//          curJob = queue[runQueueIndex++]
-//          if (currentJob->duration >= quanta){
-//              runtime = quanta
-//           } else {
-//               runtime = nextJob->duration;
-//           }
-//
-//           currentJob->duration = currentJob->duration-runtime
-//
-//           if currentJob->duration > quanta {
-//              queue[insertQueueIndex++] = currentJob;
-//           }
-//          cumtime += runtime
-//          } else { //there must be a job that exists, but its arrival is in the future. seek to that arrival time.
-//           cumtime += jobs[nextJobIndex]->arrival - cumtime
+    while (jobs[nextJobIndex] != NULL || queue[runQueueIndex] != NULL) {
+        if (jobs[nextJobIndex] != NULL &&
+            jobs[nextJobIndex]->arrival <= cumTime) {
+            struct job *currentJob = jobs[nextJobIndex++];
+            int runTime;
+            if (currentJob->duration >= quanta) {
+                runTime = quanta;
+            } else {
+                runTime = currentJob->duration;
+            }
 
+            printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]\n", cumTime, currentJob->id, currentJob->arrival,
+                   runTime);
 
-    for (int i = 0; i < numJobs; i++) {
-        //need to choose whether to use next job in jobs, next job in queue, or if none in queue and job is > cumTime,
-        //set cum time to the job by adding the difference between arrival and current to cum time, repeating
-        struct job *nextJob = jobs[i];
+            cumTime += runTime;
+            currentJob->duration = currentJob->duration - runTime;
 
-        int runtime = 0;
-        if (nextJob->duration >= quanta){
-            runtime = quanta;
+            if (currentJob->duration > 0) {
+                queue[insertQueueIndex++] = currentJob;
+            }
+        } else if (queue[runQueueIndex] != NULL) {
+            struct job *currentJob = queue[runQueueIndex++];
+            int runTime;
+            if (currentJob->duration >= quanta) {
+                runTime = quanta;
+            } else {
+                runTime = currentJob->duration;
+            }
+
+            printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]\n", cumTime, currentJob->id, currentJob->arrival,
+                   runTime);
+
+            currentJob->duration = currentJob->duration - runTime;
+
+            if (currentJob->duration > 0) {
+                queue[insertQueueIndex++] = currentJob;
+            }
+            cumTime += runTime;
         } else {
-            runtime = nextJob->duration;
+            cumTime += jobs[nextJobIndex]->arrival - cumTime;
         }
-
-
-        printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]", cumTime, nextJob->id, nextJob->arrival, runtime);
-        cumTime += runtime;
-        nextJob->duration = nextJob->duration - quanta;
     }
 
-
-
-//    while (curJob != NULL) {
-//        printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]");
-//        //just check > 0 for if job is finished, this can go negative
-//        curJob->duration -= sliceDuration;
-//        if (curJob->duration < 1){
-//            finishedJobs++;
-//        }
-//        curJob = curJob->next;
-//    }
     puts("End of execution with RR.");
 }
 
