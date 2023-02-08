@@ -296,6 +296,10 @@ void analyze_RR(struct job *pJob, int quanta) {
     int responseTime[numJobs];
     memset(responseTime, -1, sizeof(int) * numJobs);
 
+    int waitS = 0;
+    int responseS = 0;
+    int turnaroundS = 0;
+
     while (jobs[nextJobIndex] != NULL || queue[runQueueIndex] != NULL) {
         if (jobs[nextJobIndex] != NULL &&
             jobs[nextJobIndex]->arrival <= cumTime) {
@@ -354,9 +358,13 @@ void analyze_RR(struct job *pJob, int quanta) {
         //add into sum array
         printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n", i, responseTime[i],
                turnaround[i], wait[i]);
+        turnaroundS += turnaround[i];
+        waitS += wait[i];
+        responseS += responseTime[i];
     }
 
-    //print avg
+    printf("Average -- Response: %.2f  Turnaround %.2f  Wait %.2f\n", responseS / (float) numJobs, turnaroundS / (float) numJobs,
+           waitS / (float) numJobs);
 }
 
 int main(int argc, char **argv) {
