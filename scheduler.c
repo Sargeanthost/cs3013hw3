@@ -19,6 +19,8 @@ struct job *head = NULL;
 
 /*** Globals End ***/
 
+struct job *jobCopy(struct job *pJob);
+
 /*Function to append a new job to the list*/
 void append(int id, int arrival, int duration) {
     // create a new struct and initialize it with the input data
@@ -269,8 +271,92 @@ void policy_RR(struct job *pJob, int quanta) {
     puts("End of execution with RR.");
 }
 
-void analyze_RR(struct job *pJob, int duration) {
+void analyze_RR(struct job *pJob, int quanta) {
+    struct job *curJob = pJob;
 
+    int cumTime = 0;
+    int runQueueIndex = 0;
+    int insertQueueIndex = 0;
+    int nextJobIndex = 0;
+    struct job *queue[100] = {NULL};
+    struct job *jobs[100] = {NULL};
+    int numJobs = 0;
+
+    while (curJob != NULL) {
+        jobs[curJob->id] = curJob;
+        numJobs = curJob->id + 1;
+        curJob = curJob->next;
+    }
+    int wait[numJobs];
+    int runTimeArr[numJobs]; //needed because we mutate this in loop
+    memset(runTimeArr, -1, sizeof(int) * numJobs);
+    int startTime[numJobs];
+    memset(startTime, -1, sizeof(int) * numJobs);
+    int turnaround[numJobs];
+    int responseTime[numJobs];
+    memset(responseTime, -1, sizeof(int) * numJobs);
+
+    while (jobs[nextJobIndex] != NULL || queue[runQueueIndex] != NULL) {
+        if (jobs[nextJobIndex] != NULL &&
+            jobs[nextJobIndex]->arrival <= cumTime) {
+            struct job *currentJob = jobs[nextJobIndex];
+            int runTime;
+            if (runTimeArr[currentJob->id] == -1){
+                runTimeArr[currentJob->id] = currentJob->duration;
+            }
+            if (currentJob->duration >= quanta) {
+                runTime = quanta;
+            } else {
+                runTime = currentJob->duration;
+            }
+
+            if (responseTime[currentJob->id] == -1){
+                responseTime[currentJob->id] = cumTime-currentJob->arrival;
+            }
+            if (startTime[currentJob->id] == -1){
+                startTime[currentJob->id] = cumTime;
+            }
+
+            cumTime += runTime;
+
+            turnaround[currentJob->id] = cumTime-currentJob->arrival;
+            wait[currentJob->id] = (cumTime - currentJob->arrival) - runTimeArr[currentJob->id];
+
+            currentJob->duration = currentJob->duration - runTime;
+            if (currentJob->duration > 0) {
+                queue[insertQueueIndex++] = currentJob;
+            }
+            nextJobIndex++;
+        } else if (queue[runQueueIndex] != NULL) {
+            struct job *currentJob = queue[runQueueIndex];
+            int runTime;
+            if (currentJob->duration >= quanta) {
+                runTime = quanta;
+            } else {
+                runTime = currentJob->duration;
+            }
+
+            currentJob->duration = currentJob->duration - runTime;
+
+            if (currentJob->duration > 0) {
+                queue[insertQueueIndex++] = currentJob;
+            }
+            cumTime += runTime;
+            turnaround[currentJob->id] = cumTime - currentJob->arrival;
+            wait[currentJob->id] = (cumTime - currentJob->arrival) - runTimeArr[currentJob->id];
+
+            runQueueIndex++;
+        } else {
+            cumTime += jobs[nextJobIndex]->arrival - cumTime;
+        }
+    }
+    for (int i = 0; i < numJobs; i++) {
+        //add into sum array
+        printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n", i, responseTime[i],
+               turnaround[i], wait[i]);
+    }
+
+    //print avg
 }
 
 int main(int argc, char **argv) {
@@ -290,7 +376,7 @@ int main(int argc, char **argv) {
     read_workload_file(workload);
 
     if (strcmp(policy, "FIFO") == 0) {
-        policy_FIFO(head);
+        policy_FIFO(head);//mutates jobs
         if (analysis) {
             printf("Begin analyzing FIFO:\n");
             analyze_FIFO(head);
@@ -309,10 +395,12 @@ int main(int argc, char **argv) {
     }
     if (strcmp(policy, "RR") == 0) {
         policy_RR(head, slice_duration);
+        head = NULL;
+        read_workload_file(workload);
         if (analysis) {
-            printf("Begin analyzing SJF:\n");
+            printf("Begin analyzing RR:\n");
             analyze_RR(head, slice_duration);
-            printf("End analyzing SJF.\n");
+            printf("End analyzing RR.\n");
         }
         exit(EXIT_SUCCESS);
     }
